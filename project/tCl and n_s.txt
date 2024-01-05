@@ -1,0 +1,53 @@
+# imports
+import numpy as np
+import matplotlib
+from matplotlib import pyplot as plt, ticker as mticker
+import numpy as np
+from classy import Class
+from scipy.optimize import fsolve
+import math
+import scienceplots
+plt.style.use(['science','notebook'])
+font = {'size': 22,'family':'STIXGeneral'}
+matplotlib.rc('font',**font)
+
+# Varying parameter (others fixed to default)
+var_min = 0.67
+var_max = 1.27
+var_num = 5
+
+# Fixed settings
+common_settings = {'output':'mPk,tCl','h':0.674,'YHe':0.245,'P_k_max_1/Mpc':1.0,'Omega_m':0.315,'Omega_b':0.0493} # values taken from Baumann C.2.3
+
+# Loop over varying parameter values
+cosmo = {}
+
+for i in range(var_num):
+	n_s = var_min + (var_max-var_min)*i/(var_num-1.)
+	cosmo[i] = Class() # call CLASS
+	cosmo[i].set(common_settings)
+	cosmo[i].set({'n_s':n_s})
+	cosmo[i].compute()
+
+# Create figures
+fig_Cl, ax_Cl = plt.subplots()
+
+# Loop over varying parameter values
+tCl = {} # temp
+
+for i in range(var_num):
+	# Deal with varying parameters (for the legend)
+	n_s = var_min + (var_max-var_min)*i/(var_num-1.)
+	tCl[i] = [] # temp
+	cl = cosmo[i].raw_cl()
+	l = cl['ell']
+	ax_Cl.semilogx(l, l*(l+1)/(2.*math.pi)*cl['tt']*10.e12,label=r'$n_{s}$ = %g' % n_s) #multiply by 10^12 bc units of uK^2	
+
+ax_Cl.set_xlim([2,2.5e3])
+ax_Cl.xaxis.set_major_formatter(mticker.ScalarFormatter())
+ax_Cl.set_xlabel(r'multipole moment $\ell$') 
+ax_Cl.set_ylabel(r'$\ell(\ell+1)C_{\ell}^{TT}/2\pi[\mu K^2]$') 
+ax_Cl.legend()
+fig_Cl.tight_layout()
+plt.show() 
+fig_Cl.savefig('Cl_and_n_s_final.svg')
